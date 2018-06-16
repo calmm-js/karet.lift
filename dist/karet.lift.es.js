@@ -1,6 +1,20 @@
-import { isArray, isObject, identicalU, inherit, curry, isFunction } from 'infestines';
+import { defineNameU, isArray, isObject, identicalU, inherit, curry, isFunction } from 'infestines';
 import { Property, Observable } from 'kefir';
 import { elemsTotal, values, all, modify, forEach, select } from 'partial.lenses';
+
+//
+
+var setName = process.env.NODE_ENV === 'production' ? function (x) {
+  return x;
+} : function (to, name) {
+  return defineNameU(to, name);
+};
+
+var copyName = process.env.NODE_ENV === 'production' ? function (x) {
+  return x;
+} : function (to, from) {
+  return defineNameU(to, from.name);
+};
 
 //
 
@@ -115,7 +129,7 @@ var Combine = /*#__PURE__*/inherit(function Combine(xs, f) {
   }
 });
 
-var combineU = function combineU(xs, f) {
+var combineU = function combine(xs, f) {
   return select(inArgs, xs) ? new Combine(xs, f) : f.apply(null, xs);
 };
 
@@ -125,7 +139,7 @@ function liftFail(f) {
   throw Error('Arity of ' + f + ' unsupported');
 }
 
-function makeLift(stop) {
+function makeLift(stop, name) {
   function helper() {
     var n = arguments.length;
     var xs = Array(n);
@@ -139,25 +153,25 @@ function makeLift(stop) {
     if (isFunction(f)) {
       switch (f.length) {
         case 0:
-          return function () {
+          return copyName(function () {
             return helper.apply(f, arguments);
-          };
+          }, f);
         case 1:
-          return function (_1) {
+          return copyName(function (_1) {
             return helper.apply(f, arguments);
-          };
+          }, f);
         case 2:
-          return function (_1, _2) {
+          return copyName(function (_1, _2) {
             return helper.apply(f, arguments);
-          };
+          }, f);
         case 3:
-          return function (_1, _2, _3) {
+          return copyName(function (_1, _2, _3) {
             return helper.apply(f, arguments);
-          };
+          }, f);
         case 4:
-          return function (_1, _2, _3, _4) {
+          return copyName(function (_1, _2, _3, _4) {
             return helper.apply(f, arguments);
-          };
+          }, f);
         default:
           return liftFail(f);
       }
@@ -168,14 +182,14 @@ function makeLift(stop) {
     }
   }
 
-  return function (fn) {
+  return setName(function (fn) {
     var lifted = liftRec(fn);
     if (lifted !== fn) lifted.fn = fn;
     return lifted;
-  };
+  }, name);
 }
 
-var lift = /*#__PURE__*/makeLift(true);
-var liftRec = /*#__PURE__*/makeLift(false);
+var lift = /*#__PURE__*/makeLift(true, 'lift');
+var liftRec = /*#__PURE__*/makeLift(false, 'liftRec');
 
 export { combine, lift, liftRec };

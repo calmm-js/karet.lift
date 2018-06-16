@@ -6,6 +6,16 @@
 
   //
 
+  var setName = function (to, name) {
+    return I.defineNameU(to, name);
+  };
+
+  var copyName = function (to, from) {
+    return I.defineNameU(to, from.name);
+  };
+
+  //
+
   var header = 'karet.lift:';
 
   function warn(f) {
@@ -115,7 +125,7 @@
     }
   });
 
-  var combineU = function combineU(xs, f) {
+  var combineU = function combine(xs, f) {
     return L.select(inArgs, xs) ? new Combine(xs, f) : f.apply(null, xs);
   };
 
@@ -125,7 +135,7 @@
     throw Error('Arity of ' + f + ' unsupported');
   }
 
-  function makeLift(stop) {
+  function makeLift(stop, name) {
     function helper() {
       var n = arguments.length;
       var xs = Array(n);
@@ -139,25 +149,25 @@
       if (I.isFunction(f)) {
         switch (f.length) {
           case 0:
-            return function () {
+            return copyName(function () {
               return helper.apply(f, arguments);
-            };
+            }, f);
           case 1:
-            return function (_1) {
+            return copyName(function (_1) {
               return helper.apply(f, arguments);
-            };
+            }, f);
           case 2:
-            return function (_1, _2) {
+            return copyName(function (_1, _2) {
               return helper.apply(f, arguments);
-            };
+            }, f);
           case 3:
-            return function (_1, _2, _3) {
+            return copyName(function (_1, _2, _3) {
               return helper.apply(f, arguments);
-            };
+            }, f);
           case 4:
-            return function (_1, _2, _3, _4) {
+            return copyName(function (_1, _2, _3, _4) {
               return helper.apply(f, arguments);
-            };
+            }, f);
           default:
             return liftFail(f);
         }
@@ -168,15 +178,15 @@
       }
     }
 
-    return function (fn) {
+    return setName(function (fn) {
       var lifted = liftRec(fn);
       if (lifted !== fn) lifted.fn = fn;
       return lifted;
-    };
+    }, name);
   }
 
-  var lift = /*#__PURE__*/makeLift(true);
-  var liftRec = /*#__PURE__*/makeLift(false);
+  var lift = /*#__PURE__*/makeLift(true, 'lift');
+  var liftRec = /*#__PURE__*/makeLift(false, 'liftRec');
 
   exports.combine = combine;
   exports.lift = lift;

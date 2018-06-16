@@ -4,6 +4,18 @@ import * as L from 'partial.lenses'
 
 //
 
+const setName =
+  process.env.NODE_ENV === 'production'
+    ? x => x
+    : (to, name) => I.defineNameU(to, name)
+
+const copyName =
+  process.env.NODE_ENV === 'production'
+    ? x => x
+    : (to, from) => I.defineNameU(to, from.name)
+
+//
+
 const header = 'karet.lift:'
 
 function warn(f, ...msg) {
@@ -124,8 +136,9 @@ const Combine = I.inherit(
   }
 )
 
-const combineU = (xs, f) =>
-  L.select(inArgs, xs) ? new Combine(xs, f) : f.apply(null, xs)
+const combineU = function combine(xs, f) {
+  return L.select(inArgs, xs) ? new Combine(xs, f) : f.apply(null, xs)
+}
 
 export const combine = I.curry(combineU)
 
@@ -133,7 +146,7 @@ function liftFail(f) {
   throw Error(`Arity of ${f} unsupported`)
 }
 
-function makeLift(stop) {
+function makeLift(stop, name) {
   function helper() {
     const n = arguments.length
     const xs = Array(n)
@@ -146,25 +159,25 @@ function makeLift(stop) {
     if (I.isFunction(f)) {
       switch (f.length) {
         case 0:
-          return function() {
+          return copyName(function() {
             return helper.apply(f, arguments)
-          }
+          }, f)
         case 1:
-          return function(_1) {
+          return copyName(function(_1) {
             return helper.apply(f, arguments)
-          }
+          }, f)
         case 2:
-          return function(_1, _2) {
+          return copyName(function(_1, _2) {
             return helper.apply(f, arguments)
-          }
+          }, f)
         case 3:
-          return function(_1, _2, _3) {
+          return copyName(function(_1, _2, _3) {
             return helper.apply(f, arguments)
-          }
+          }, f)
         case 4:
-          return function(_1, _2, _3, _4) {
+          return copyName(function(_1, _2, _3, _4) {
             return helper.apply(f, arguments)
-          }
+          }, f)
         default:
           return liftFail(f)
       }
@@ -175,12 +188,12 @@ function makeLift(stop) {
     }
   }
 
-  return fn => {
+  return setName(fn => {
     const lifted = liftRec(fn)
     if (lifted !== fn) lifted.fn = fn
     return lifted
-  }
+  }, name)
 }
 
-export const lift = makeLift(true)
-export const liftRec = makeLift(false)
+export const lift = makeLift(true, 'lift')
+export const liftRec = makeLift(false, 'liftRec')

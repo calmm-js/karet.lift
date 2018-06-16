@@ -186,9 +186,14 @@ describe('liftRec', () => {
   })
 })
 
-if (process.env.NODE_ENV !== 'production')
+if (process.env.NODE_ENV !== 'production') {
   describe('diagnostics', () => {
     it('warns about non-properties', () => {
       combine([K.interval(10, 'a')], I.id)
     })
   })
+
+  describe('name preservation', () => {
+    testEq('set', () => lift(L.set)(0, 1).name)
+  })
+}
