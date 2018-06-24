@@ -27,15 +27,20 @@ function warn(f, ...msg) {
 
 //
 
-const isProperty =
+const isObservable = x => x instanceof K.Observable
+const isProperty = x => x instanceof K.Property
+
+const isPropertyWarn =
   process.env.NODE_ENV === 'production'
-    ? x => x instanceof K.Property
-    : x => {
-        if (x instanceof K.Property) return true
-        if (x instanceof K.Observable)
+    ? isProperty
+    : (x, i) => {
+        if (isProperty(x)) return true
+        if (isObservable(x))
           warn(
             isProperty,
-            'Encountered an observable that is not a property:\n',
+            `Encountered an observable that is not a property${
+              undefined !== i ? ` at index ${JSON.stringify(i)}` : ''
+            }:\n`,
             x,
             '\nYou need to explicitly convert observables to properties.\n'
           )
@@ -61,7 +66,7 @@ const reactElement = Symbol.for('react.element')
 
 function inArgs(x, i, F, xi2yF) {
   const rec = (x, i) =>
-    isProperty(x)
+    isPropertyWarn(x, i)
       ? xi2yF(x, i)
       : I.isArray(x)
         ? L.elemsTotal(x, i, F, rec)
@@ -181,7 +186,7 @@ function makeLift(stop, name) {
         default:
           return liftFail(f)
       }
-    } else if (isProperty(f)) {
+    } else if (isPropertyWarn(f)) {
       return new Combine([f], liftRec)
     } else {
       return f
