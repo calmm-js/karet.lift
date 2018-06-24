@@ -16,36 +16,8 @@ const copyName =
 
 //
 
-const header = 'karet.lift:'
-
-function warn(f, ...msg) {
-  if (!f.warned) {
-    f.warned = 1
-    console.warn.apply(console, [header].concat(msg, [Error().stack]))
-  }
-}
-
-//
-
-const isObservable = x => x instanceof K.Observable
+const isStream = x => x instanceof K.Stream
 const isProperty = x => x instanceof K.Property
-
-const isPropertyWarn =
-  process.env.NODE_ENV === 'production'
-    ? isProperty
-    : (x, i) => {
-        if (isProperty(x)) return true
-        if (isObservable(x))
-          warn(
-            isProperty,
-            `Encountered an observable that is not a property${
-              undefined !== i ? ` at index ${JSON.stringify(i)}` : ''
-            }:\n`,
-            x,
-            '\nYou need to explicitly convert observables to properties.\n'
-          )
-        return false
-      }
 
 //
 
@@ -64,17 +36,21 @@ const reactElement = Symbol.for('react.element')
 
 //
 
-function inArgs(x, i, F, xi2yF) {
-  const rec = (x, i) =>
-    isPropertyWarn(x, i)
-      ? xi2yF(x, i)
-      : I.isArray(x)
-        ? L.elemsTotal(x, i, F, rec)
-        : I.isObject(x) && x.$$typeof !== reactElement
-          ? L.values(x, i, F, rec)
-          : F.of(x)
-  return rec(x, i)
-}
+const mkInArgs = predicate =>
+  function inArgs(x, i, F, xi2yF) {
+    const rec = (x, i) =>
+      predicate(x)
+        ? xi2yF(x, i)
+        : I.isArray(x)
+          ? L.elemsTotal(x, i, F, rec)
+          : I.isObject(x) && x.$$typeof !== reactElement
+            ? L.values(x, i, F, rec)
+            : F.of(x)
+    return rec(x, i)
+  }
+
+const inArgs = mkInArgs(isProperty)
+const inArgsStream = mkInArgs(isStream)
 
 //
 
@@ -141,9 +117,24 @@ const Combine = I.inherit(
   }
 )
 
-const combineU = function combine(xs, f) {
+const combineU = (process.env.NODE_ENV === 'production'
+  ? I.id
+  : fn =>
+      function combine(xs, f) {
+        if (!combineU.w && L.select(inArgsStream, xs)) {
+          combineU.w = 1
+          console.warn(
+            `karet.lift: Stream(s) passed to \`combine(..., ${f.name ||
+              '<anonymous fn>'})\`:\n`,
+            xs,
+            `\nat:`,
+            Error().stack
+          )
+        }
+        return fn(xs, f)
+      })(function combine(xs, f) {
   return L.select(inArgs, xs) ? new Combine(xs, f) : f.apply(null, xs)
-}
+})
 
 export const combine = I.curry(combineU)
 
@@ -186,7 +177,7 @@ function makeLift(stop, name) {
         default:
           return liftFail(f)
       }
-    } else if (isPropertyWarn(f)) {
+    } else if (isProperty(f)) {
       return new Combine([f], liftRec)
     } else {
       return f
