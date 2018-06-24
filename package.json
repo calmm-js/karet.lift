@@ -1,6 +1,6 @@
 {
   "name": "karet.lift",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Special purpose lifting combinator for Kefir properties",
   "module": "dist/karet.lift.es.js",
   "main": "dist/karet.lift.cjs.js",

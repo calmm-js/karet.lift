@@ -1,5 +1,5 @@
-import { defineNameU, isArray, isObject, identicalU, inherit, curry, isFunction } from 'infestines';
-import { Observable, Property } from 'kefir';
+import { defineNameU, isArray, isObject, identicalU, inherit, id, curry, isFunction } from 'infestines';
+import { Stream, Property } from 'kefir';
 import { elemsTotal, values, all, modify, forEach, select } from 'partial.lenses';
 
 //
@@ -18,33 +18,11 @@ var copyName = process.env.NODE_ENV === 'production' ? function (x) {
 
 //
 
-var header = 'karet.lift:';
-
-function warn(f) {
-  if (!f.warned) {
-    f.warned = 1;
-
-    for (var _len = arguments.length, msg = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-      msg[_key - 1] = arguments[_key];
-    }
-
-    console.warn.apply(console, [header].concat(msg, [Error().stack]));
-  }
-}
-
-//
-
-var isObservable = function isObservable(x) {
-  return x instanceof Observable;
+var isStream = function isStream(x) {
+  return x instanceof Stream;
 };
 var isProperty = function isProperty(x) {
   return x instanceof Property;
-};
-
-var isPropertyWarn = process.env.NODE_ENV === 'production' ? isProperty : function (x, i) {
-  if (isProperty(x)) return true;
-  if (isObservable(x)) warn(isProperty, 'Encountered an observable that is not a property' + (undefined !== i ? ' at index ' + JSON.stringify(i) : '') + ':\n', x, '\nYou need to explicitly convert observables to properties.\n');
-  return false;
 };
 
 //
@@ -68,12 +46,17 @@ var reactElement = /*#__PURE__*/Symbol.for('react.element');
 
 //
 
-function inArgs(x, i, F, xi2yF) {
-  var rec = function rec(x, i) {
-    return isPropertyWarn(x, i) ? xi2yF(x, i) : isArray(x) ? elemsTotal(x, i, F, rec) : isObject(x) && x.$$typeof !== reactElement ? values(x, i, F, rec) : F.of(x);
+var mkInArgs = function mkInArgs(predicate) {
+  return function inArgs(x, i, F, xi2yF) {
+    var rec = function rec(x, i) {
+      return predicate(x) ? xi2yF(x, i) : isArray(x) ? elemsTotal(x, i, F, rec) : isObject(x) && x.$$typeof !== reactElement ? values(x, i, F, rec) : F.of(x);
+    };
+    return rec(x, i);
   };
-  return rec(x, i);
-}
+};
+
+var inArgs = /*#__PURE__*/mkInArgs(isProperty);
+var inArgsStream = /*#__PURE__*/mkInArgs(isStream);
 
 //
 
@@ -134,9 +117,17 @@ var Combine = /*#__PURE__*/inherit(function Combine(xs, f) {
   }
 });
 
-var combineU = function combine(xs, f) {
+var combineU = /*#__PURE__*/(process.env.NODE_ENV === 'production' ? id : function (fn) {
+  return function combine(xs, f) {
+    if (!combineU.w && select(inArgsStream, xs)) {
+      combineU.w = 1;
+      console.warn('karet.lift: Stream(s) passed to `combine(..., ' + (f.name || '<anonymous fn>') + ')`:\n', xs, '\nat:', Error().stack);
+    }
+    return fn(xs, f);
+  };
+})(function combine(xs, f) {
   return select(inArgs, xs) ? new Combine(xs, f) : f.apply(null, xs);
-};
+});
 
 var combine = /*#__PURE__*/curry(combineU);
 
@@ -180,7 +171,7 @@ function makeLift(stop, name) {
         default:
           return liftFail(f);
       }
-    } else if (isPropertyWarn(f)) {
+    } else if (isProperty(f)) {
       return new Combine([f], liftRec);
     } else {
       return f;
