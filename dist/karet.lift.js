@@ -32,9 +32,16 @@
 
   //
 
-  var isProperty = function (x) {
-    if (x instanceof K.Property) return true;
-    if (x instanceof K.Observable) warn(isProperty, 'Encountered an observable that is not a property:\n', x, '\nYou need to explicitly convert observables to properties.\n');
+  var isObservable = function isObservable(x) {
+    return x instanceof K.Observable;
+  };
+  var isProperty = function isProperty(x) {
+    return x instanceof K.Property;
+  };
+
+  var isPropertyWarn = function (x, i) {
+    if (isProperty(x)) return true;
+    if (isObservable(x)) warn(isProperty, 'Encountered an observable that is not a property' + (undefined !== i ? ' at index ' + JSON.stringify(i) : '') + ':\n', x, '\nYou need to explicitly convert observables to properties.\n');
     return false;
   };
 
@@ -61,7 +68,7 @@
 
   function inArgs(x, i, F, xi2yF) {
     var rec = function rec(x, i) {
-      return isProperty(x) ? xi2yF(x, i) : I.isArray(x) ? L.elemsTotal(x, i, F, rec) : I.isObject(x) && x.$$typeof !== reactElement ? L.values(x, i, F, rec) : F.of(x);
+      return isPropertyWarn(x, i) ? xi2yF(x, i) : I.isArray(x) ? L.elemsTotal(x, i, F, rec) : I.isObject(x) && x.$$typeof !== reactElement ? L.values(x, i, F, rec) : F.of(x);
     };
     return rec(x, i);
   }
@@ -171,7 +178,7 @@
           default:
             return liftFail(f);
         }
-      } else if (isProperty(f)) {
+      } else if (isPropertyWarn(f)) {
         return new Combine([f], liftRec);
       } else {
         return f;
