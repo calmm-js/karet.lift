@@ -186,6 +186,15 @@ describe('liftRec', () => {
   })
 })
 
+const theCaller = x =>
+  lift(function theCallee(x) {
+    if (!x) {
+      throw Error()
+    } else {
+      return x
+    }
+  })(x)
+
 if (process.env.NODE_ENV !== 'production') {
   describe('diagnostics', () => {
     it('warns about non-properties', () => {
@@ -195,5 +204,20 @@ if (process.env.NODE_ENV !== 'production') {
 
   describe('name preservation', () => {
     testEq('set', () => lift(L.set)(0, 1).name)
+  })
+
+  describe('exceptions include call site', () => {
+    testEq('at theCaller', () => {
+      const x = new K.Property()
+      const c = theCaller(x)
+      c.observe(() => {})
+      try {
+        x._emitValue(1)
+        x._emitValue(0)
+        return 'Should have thrown an error!'
+      } catch (e) {
+        return /at theCaller/.exec(e.stack)[0]
+      }
+    })
   })
 }
