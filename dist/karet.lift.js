@@ -115,6 +115,15 @@
     }
   });
 
+  var nameAsStack = function (fn) {
+    var _Error = Error(),
+        stack = _Error.stack;
+
+    return I.defineNameU(function () {
+      return fn.apply(null, arguments);
+    }, stack.replace(/^(.*[\n]){6}\s*at\s/, '').replace(/[\n]/g, '\n   ') + '\n       in');
+  };
+
   var combineU = /*#__PURE__*/(function (fn) {
     return function combine(xs, f) {
       if (!combineU.w && L.select(inArgsStream, xs)) {
@@ -124,7 +133,7 @@
       return fn(xs, f);
     };
   })(function combine(xs, f) {
-    return L.select(inArgs, xs) ? new Combine(xs, f) : f.apply(null, xs);
+    return L.select(inArgs, xs) ? new Combine(xs, nameAsStack(f)) : f.apply(null, xs);
   });
 
   var combine = /*#__PURE__*/I.curry(combineU);

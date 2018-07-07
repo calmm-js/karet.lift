@@ -121,6 +121,17 @@ var Combine = /*#__PURE__*/I.inherit(function Combine(xs, f) {
   }
 });
 
+var nameAsStack = process.env.NODE_ENV === 'production' ? function (x) {
+  return x;
+} : function (fn) {
+  var _Error = Error(),
+      stack = _Error.stack;
+
+  return I.defineNameU(function () {
+    return fn.apply(null, arguments);
+  }, stack.replace(/^(.*[\n]){6}\s*at\s/, '').replace(/[\n]/g, '\n   ') + '\n       in');
+};
+
 var combineU = /*#__PURE__*/(process.env.NODE_ENV === 'production' ? I.id : function (fn) {
   return function combine(xs, f) {
     if (!combineU.w && L.select(inArgsStream, xs)) {
@@ -130,7 +141,7 @@ var combineU = /*#__PURE__*/(process.env.NODE_ENV === 'production' ? I.id : func
     return fn(xs, f);
   };
 })(function combine(xs, f) {
-  return L.select(inArgs, xs) ? new Combine(xs, f) : f.apply(null, xs);
+  return L.select(inArgs, xs) ? new Combine(xs, nameAsStack(f)) : f.apply(null, xs);
 });
 
 var combine = /*#__PURE__*/I.curry(combineU);
