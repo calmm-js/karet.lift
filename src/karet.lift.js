@@ -117,6 +117,18 @@ const Combine = I.inherit(
   }
 )
 
+const nameAsStack =
+  process.env.NODE_ENV === 'production'
+    ? x => x
+    : fn => {
+        const {stack} = Error()
+        return I.defineNameU(function() {
+          return fn.apply(null, arguments)
+        }, `${stack
+          .replace(/^(.*[\n]){6}\s*at\s/, '')
+          .replace(/[\n]/g, '\n   ')}\n       in`)
+      }
+
 const combineU = (process.env.NODE_ENV === 'production'
   ? I.id
   : fn =>
@@ -133,7 +145,9 @@ const combineU = (process.env.NODE_ENV === 'production'
         }
         return fn(xs, f)
       })(function combine(xs, f) {
-  return L.select(inArgs, xs) ? new Combine(xs, f) : f.apply(null, xs)
+  return L.select(inArgs, xs)
+    ? new Combine(xs, nameAsStack(f))
+    : f.apply(null, xs)
 })
 
 export const combine = I.curry(combineU)
