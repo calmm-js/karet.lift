@@ -127,9 +127,9 @@ var nameAsStack = process.env.NODE_ENV === 'production' ? function (x) {
   var _Error = Error(),
       stack = _Error.stack;
 
-  return I.defineNameU(function () {
+  return stack ? I.defineNameU(function () {
     return fn.apply(null, arguments);
-  }, stack.replace(/^(.*[\n]){6}\s*at\s/, '').replace(/[\n]/g, '\n   ') + '\n       in');
+  }, stack.replace(/^(.*[\n]){6}\s*at\s/, '').replace(/[\n]/g, '\n   ') + '\n       in') : fn;
 };
 
 var combineU = /*#__PURE__*/(process.env.NODE_ENV === 'production' ? I.id : function (fn) {
