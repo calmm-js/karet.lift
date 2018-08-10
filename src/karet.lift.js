@@ -122,11 +122,13 @@ const nameAsStack =
     ? x => x
     : fn => {
         const {stack} = Error()
-        return I.defineNameU(function() {
-          return fn.apply(null, arguments)
-        }, `${stack
-          .replace(/^(.*[\n]){6}\s*at\s/, '')
-          .replace(/[\n]/g, '\n   ')}\n       in`)
+        return stack
+          ? I.defineNameU(function() {
+              return fn.apply(null, arguments)
+            }, `${stack
+              .replace(/^(.*[\n]){6}\s*at\s/, '')
+              .replace(/[\n]/g, '\n   ')}\n       in`)
+          : fn
       }
 
 const combineU = (process.env.NODE_ENV === 'production'
