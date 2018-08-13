@@ -126,14 +126,14 @@
 
   var combineU = /*#__PURE__*/(function (fn) {
     return function combine(xs, f) {
-      if (!combineU.w && L.select(inArgsStream, xs)) {
+      if (!combineU.w && L.get(inArgsStream, xs)) {
         combineU.w = 1;
         console.warn('karet.lift: Stream(s) passed to `combine(..., ' + (f.name || '<anonymous fn>') + ')`:\n', xs, '\nat:', Error().stack);
       }
       return fn(xs, f);
     };
   })(function combine(xs, f) {
-    return L.select(inArgs, xs) ? new Combine(xs, nameAsStack(f)) : f.apply(null, xs);
+    return L.get(inArgs, xs) ? new Combine(xs, nameAsStack(f)) : f.apply(null, xs);
   });
 
   var combine = /*#__PURE__*/I.curry(combineU);

@@ -1,6 +1,6 @@
 import { defineNameU, isArray, isObject, identicalU, inherit, id, curry, isFunction } from 'infestines';
 import { Stream, Property } from 'kefir';
-import { elemsTotal, values, all, modify, forEach, select } from 'partial.lenses';
+import { elemsTotal, values, all, modify, forEach, get } from 'partial.lenses';
 
 //
 
@@ -130,14 +130,14 @@ var nameAsStack = process.env.NODE_ENV === 'production' ? function (x) {
 
 var combineU = /*#__PURE__*/(process.env.NODE_ENV === 'production' ? id : function (fn) {
   return function combine(xs, f) {
-    if (!combineU.w && select(inArgsStream, xs)) {
+    if (!combineU.w && get(inArgsStream, xs)) {
       combineU.w = 1;
       console.warn('karet.lift: Stream(s) passed to `combine(..., ' + (f.name || '<anonymous fn>') + ')`:\n', xs, '\nat:', Error().stack);
     }
     return fn(xs, f);
   };
 })(function combine(xs, f) {
-  return select(inArgs, xs) ? new Combine(xs, nameAsStack(f)) : f.apply(null, xs);
+  return get(inArgs, xs) ? new Combine(xs, nameAsStack(f)) : f.apply(null, xs);
 });
 
 var combine = /*#__PURE__*/curry(combineU);
