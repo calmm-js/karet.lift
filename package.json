@@ -56,7 +56,7 @@
   },
   "dependencies": {
     "infestines": "^0.4.10",
-    "partial.lenses": "^13.11.0"
+    "partial.lenses": "^14.0.0"
   },
   "peerDependencies": {
     "kefir": "^3.7.0"

@@ -135,7 +135,7 @@ const combineU = (process.env.NODE_ENV === 'production'
   ? I.id
   : fn =>
       function combine(xs, f) {
-        if (!combineU.w && L.select(inArgsStream, xs)) {
+        if (!combineU.w && L.get(inArgsStream, xs)) {
           combineU.w = 1
           console.warn(
             `karet.lift: Stream(s) passed to \`combine(..., ${f.name ||
@@ -147,9 +147,7 @@ const combineU = (process.env.NODE_ENV === 'production'
         }
         return fn(xs, f)
       })(function combine(xs, f) {
-  return L.select(inArgs, xs)
-    ? new Combine(xs, nameAsStack(f))
-    : f.apply(null, xs)
+  return L.get(inArgs, xs) ? new Combine(xs, nameAsStack(f)) : f.apply(null, xs)
 })
 
 export const combine = I.curry(combineU)
