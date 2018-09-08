@@ -36,8 +36,8 @@ const reactElement = Symbol.for('react.element')
 
 //
 
-const mkInArgs = predicate =>
-  function inArgs(x, i, F, xi2yF) {
+const inTemplate = predicate =>
+  function inTemplate(x, i, F, xi2yF) {
     const rec = (x, i) =>
       predicate(x)
         ? xi2yF(x, i)
@@ -49,18 +49,18 @@ const mkInArgs = predicate =>
     return rec(x, i)
   }
 
-const inArgs = mkInArgs(isProperty)
-const inArgsStream = mkInArgs(isStream)
+const properties = inTemplate(isProperty)
+const streams = inTemplate(isStream)
 
 //
 
 function maybeEmit(self) {
   const x = self._x
   if (self._n & 1) {
-    if (!L.all(hasValue, inArgs, x)) return
+    if (!L.all(hasValue, properties, x)) return
     self._n ^= 1
   }
-  const y = self._f.apply(null, L.modify(inArgs, valueOf, x))
+  const y = self._f.apply(null, L.modify(properties, valueOf, x))
   const c = currentEvent(self)
   if (!c || !I.identicalU(y, c.value)) self._emitValue(y)
 }
@@ -97,7 +97,7 @@ const Combine = I.inherit(
           self._n += 2
           p.onAny(h)
         },
-        inArgs,
+        properties,
         self._x
       )
       maybeEmit(self)
@@ -112,7 +112,7 @@ const Combine = I.inherit(
       const h = self._h
       self._h = null
       self._n = 1
-      L.forEach(p => p.offAny(h), inArgs, self._x)
+      L.forEach(p => p.offAny(h), properties, self._x)
     }
   }
 )
@@ -135,7 +135,7 @@ const combineU = (process.env.NODE_ENV === 'production'
   ? I.id
   : fn =>
       function combine(xs, f) {
-        if (!combineU.w && L.get(inArgsStream, xs)) {
+        if (!combineU.w && L.get(streams, xs)) {
           combineU.w = 1
           console.warn(
             `karet.lift: Stream(s) passed to \`combine(..., ${f.name ||
@@ -147,7 +147,9 @@ const combineU = (process.env.NODE_ENV === 'production'
         }
         return fn(xs, f)
       })(function combine(xs, f) {
-  return L.get(inArgs, xs) ? new Combine(xs, nameAsStack(f)) : f.apply(null, xs)
+  return L.get(properties, xs)
+    ? new Combine(xs, nameAsStack(f))
+    : f.apply(null, xs)
 })
 
 export const combine = I.curry(combineU)
