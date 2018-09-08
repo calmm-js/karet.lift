@@ -44,8 +44,8 @@
 
   //
 
-  var mkInArgs = function mkInArgs(predicate) {
-    return function inArgs(x, i, F, xi2yF) {
+  var inTemplate = function inTemplate(predicate) {
+    return function inTemplate(x, i, F, xi2yF) {
       var rec = function rec(x, i) {
         return predicate(x) ? xi2yF(x, i) : I.isArray(x) ? L.elemsTotal(x, i, F, rec) : I.isObject(x) && x.$$typeof !== reactElement ? L.values(x, i, F, rec) : F.of(x);
       };
@@ -53,18 +53,18 @@
     };
   };
 
-  var inArgs = /*#__PURE__*/mkInArgs(isProperty);
-  var inArgsStream = /*#__PURE__*/mkInArgs(isStream);
+  var properties = /*#__PURE__*/inTemplate(isProperty);
+  var streams = /*#__PURE__*/inTemplate(isStream);
 
   //
 
   function maybeEmit(self) {
     var x = self._x;
     if (self._n & 1) {
-      if (!L.all(hasValue, inArgs, x)) return;
+      if (!L.all(hasValue, properties, x)) return;
       self._n ^= 1;
     }
-    var y = self._f.apply(null, L.modify(inArgs, valueOf, x));
+    var y = self._f.apply(null, L.modify(properties, valueOf, x));
     var c = currentEvent(self);
     if (!c || !I.identicalU(y, c.value)) self._emitValue(y);
   }
@@ -96,7 +96,7 @@
       L.forEach(function (p) {
         self._n += 2;
         p.onAny(h);
-      }, inArgs, self._x);
+      }, properties, self._x);
       maybeEmit(self);
       if (1 < self._n) {
         self._h = h;
@@ -111,7 +111,7 @@
       self._n = 1;
       L.forEach(function (p) {
         return p.offAny(h);
-      }, inArgs, self._x);
+      }, properties, self._x);
     }
   });
 
@@ -126,14 +126,14 @@
 
   var combineU = /*#__PURE__*/(function (fn) {
     return function combine(xs, f) {
-      if (!combineU.w && L.get(inArgsStream, xs)) {
+      if (!combineU.w && L.get(streams, xs)) {
         combineU.w = 1;
         console.warn('karet.lift: Stream(s) passed to `combine(..., ' + (f.name || '<anonymous fn>') + ')`:\n', xs, '\nat:', Error().stack);
       }
       return fn(xs, f);
     };
   })(function combine(xs, f) {
-    return L.get(inArgs, xs) ? new Combine(xs, nameAsStack(f)) : f.apply(null, xs);
+    return L.get(properties, xs) ? new Combine(xs, nameAsStack(f)) : f.apply(null, xs);
   });
 
   var combine = /*#__PURE__*/I.curry(combineU);
@@ -195,6 +195,7 @@
   var lift = /*#__PURE__*/makeLift(true, 'lift');
   var liftRec = /*#__PURE__*/makeLift(false, 'liftRec');
 
+  exports.inTemplate = inTemplate;
   exports.combine = combine;
   exports.lift = lift;
   exports.liftRec = liftRec;
