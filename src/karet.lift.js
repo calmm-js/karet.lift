@@ -36,7 +36,7 @@ const reactElement = Symbol.for('react.element')
 
 //
 
-const inTemplate = predicate =>
+export const inTemplate = predicate =>
   function inTemplate(x, i, F, xi2yF) {
     const rec = (x, i) =>
       predicate(x)
