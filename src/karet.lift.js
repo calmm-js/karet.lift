@@ -4,10 +4,7 @@ import * as L from 'partial.lenses'
 
 //
 
-const setName =
-  process.env.NODE_ENV === 'production'
-    ? x => x
-    : (to, name) => I.defineNameU(to, name)
+const setName = process.env.NODE_ENV === 'production' ? x => x : I.defineNameU
 
 const copyName =
   process.env.NODE_ENV === 'production'

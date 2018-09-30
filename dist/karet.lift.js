@@ -6,9 +6,7 @@
 
   //
 
-  var setName = function (to, name) {
-    return I.defineNameU(to, name);
-  };
+  var setName = I.defineNameU;
 
   var copyName = function (to, from) {
     return I.defineNameU(to, from.name);

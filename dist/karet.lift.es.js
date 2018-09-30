@@ -6,9 +6,7 @@ import { elemsTotal, values, all, modify, forEach, get } from 'partial.lenses';
 
 var setName = process.env.NODE_ENV === 'production' ? function (x) {
   return x;
-} : function (to, name) {
-  return defineNameU(to, name);
-};
+} : defineNameU;
 
 var copyName = process.env.NODE_ENV === 'production' ? function (x) {
   return x;

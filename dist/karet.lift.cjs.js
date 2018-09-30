@@ -10,9 +10,7 @@ var L = require('partial.lenses');
 
 var setName = process.env.NODE_ENV === 'production' ? function (x) {
   return x;
-} : function (to, name) {
-  return I.defineNameU(to, name);
-};
+} : I.defineNameU;
 
 var copyName = process.env.NODE_ENV === 'production' ? function (x) {
   return x;
